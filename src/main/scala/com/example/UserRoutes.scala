@@ -32,9 +32,12 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
   def deleteUser(name: UserName): Future[ActionPerformed] =
     userRegistry.ask(DeleteUser(name, _))
 
-  private def userNamePath: Directive1[UserName] = path(Segment.map(UserName.apply)).flatMap { name =>
-    validate(name.isValid, s"invalid name (アルファベットと空白のみ可): '${name.value}'").tmap(_ => name)
-  }
+  private def userNamePath: Directive1[UserName] =
+    for {
+      rawName <- path(Segment)
+      name <- validate(UserName.isValid(rawName), s"invalid name (アルファベットと空白のみ可): '$rawName'").tmap(_ => UserName(rawName))
+    } yield name
+
   //#all-routes
   //#users-get-post
   //#users-get-delete
