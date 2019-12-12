@@ -2,7 +2,7 @@ package com.example
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{ Directive, Route }
+import akka.http.scaladsl.server.{ Directive1, Route }
 
 import scala.concurrent.Future
 import com.example.UserRegistry._
@@ -32,7 +32,7 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
   def deleteUser(name: UserName): Future[ActionPerformed] =
     userRegistry.ask(DeleteUser(name, _))
 
-  private def userNamePath: Directive[Tuple1[UserName]] = path(Segment.map(UserName.apply)).flatMap { name =>
+  private def userNamePath: Directive1[UserName] = path(Segment.map(UserName.apply)).flatMap { name =>
     validate(name.isValid, s"invalid name (アルファベットと空白のみ可): '${name.value}'").tmap(_ => name)
   }
   //#all-routes
