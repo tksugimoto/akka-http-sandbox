@@ -7,7 +7,8 @@ import akka.actor.typed.scaladsl.Behaviors
 import scala.collection.immutable
 
 //#user-case-classes
-final case class User(name: String, age: Int, countryOfResidence: String)
+final case class UserName(value: String) extends AnyVal
+final case class User(name: UserName, age: Int, countryOfResidence: String)
 final case class Users(users: immutable.Seq[User])
 //#user-case-classes
 
@@ -16,8 +17,8 @@ object UserRegistry {
   sealed trait Command
   final case class GetUsers(replyTo: ActorRef[Users]) extends Command
   final case class CreateUser(user: User, replyTo: ActorRef[ActionPerformed]) extends Command
-  final case class GetUser(name: String, replyTo: ActorRef[GetUserResponse]) extends Command
-  final case class DeleteUser(name: String, replyTo: ActorRef[ActionPerformed]) extends Command
+  final case class GetUser(name: UserName, replyTo: ActorRef[GetUserResponse]) extends Command
+  final case class DeleteUser(name: UserName, replyTo: ActorRef[ActionPerformed]) extends Command
 
   final case class GetUserResponse(maybeUser: Option[User])
   final case class ActionPerformed(description: String)
@@ -30,13 +31,13 @@ object UserRegistry {
         replyTo ! Users(users.toSeq)
         Behaviors.same
       case CreateUser(user, replyTo) =>
-        replyTo ! ActionPerformed(s"User ${user.name} created.")
+        replyTo ! ActionPerformed(s"User ${user.name.value} created.")
         registry(users + user)
       case GetUser(name, replyTo) =>
         replyTo ! GetUserResponse(users.find(_.name == name))
         Behaviors.same
       case DeleteUser(name, replyTo) =>
-        replyTo ! ActionPerformed(s"User $name deleted.")
+        replyTo ! ActionPerformed(s"User ${name.value} deleted.")
         registry(users.filterNot(_.name == name))
     }
 }

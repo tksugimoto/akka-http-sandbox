@@ -25,11 +25,11 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
 
   def getUsers(): Future[Users] =
     userRegistry.ask(GetUsers)
-  def getUser(name: String): Future[GetUserResponse] =
+  def getUser(name: UserName): Future[GetUserResponse] =
     userRegistry.ask(GetUser(name, _))
   def createUser(user: User): Future[ActionPerformed] =
     userRegistry.ask(CreateUser(user, _))
-  def deleteUser(name: String): Future[ActionPerformed] =
+  def deleteUser(name: UserName): Future[ActionPerformed] =
     userRegistry.ask(DeleteUser(name, _))
 
   //#all-routes
@@ -54,7 +54,7 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
         },
         //#users-get-delete
         //#users-get-post
-        path(Segment) { name =>
+        path(Segment.map(UserName.apply)) { name =>
           concat(
             get {
               //#retrieve-user-info
