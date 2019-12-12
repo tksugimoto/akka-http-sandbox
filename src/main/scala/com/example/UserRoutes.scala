@@ -2,7 +2,7 @@ package com.example
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{ Directive, Route }
 
 import scala.concurrent.Future
 import com.example.UserRegistry._
@@ -32,6 +32,9 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
   def deleteUser(name: UserName): Future[ActionPerformed] =
     userRegistry.ask(DeleteUser(name, _))
 
+  private def userNamePath: Directive[Tuple1[UserName]] = path(Segment.map(UserName.apply)).flatMap { name =>
+    validate(name.isValid, s"invalid name (アルファベットと空白のみ可): '${name.value}'").tmap(_ => name)
+  }
   //#all-routes
   //#users-get-post
   //#users-get-delete
@@ -54,26 +57,24 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
         },
         //#users-get-delete
         //#users-get-post
-        path(Segment.map(UserName.apply)) { name =>
-          validate(name.isValid, s"invalid name (アルファベットと空白のみ可): '${name.value}'") {
-            concat(
-              get {
-                //#retrieve-user-info
-                rejectEmptyResponse {
-                  onSuccess(getUser(name)) { response =>
-                    complete(response.maybeUser)
-                  }
+        userNamePath { name =>
+          concat(
+            get {
+              //#retrieve-user-info
+              rejectEmptyResponse {
+                onSuccess(getUser(name)) { response =>
+                  complete(response.maybeUser)
                 }
-                //#retrieve-user-info
-              },
-              delete {
-                //#users-delete-logic
-                onSuccess(deleteUser(name)) { performed =>
-                  complete((StatusCodes.OK, performed))
-                }
-                //#users-delete-logic
-              })
-          }
+              }
+              //#retrieve-user-info
+            },
+            delete {
+              //#users-delete-logic
+              onSuccess(deleteUser(name)) { performed =>
+                complete((StatusCodes.OK, performed))
+              }
+              //#users-delete-logic
+            })
         })
       //#users-get-delete
     }
