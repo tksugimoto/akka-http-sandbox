@@ -5,6 +5,7 @@ package com.example
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.ValidationRejection
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{ Matchers, WordSpec }
@@ -35,6 +36,16 @@ class UserRoutesSpec extends WordSpec with Matchers with ScalaFutures with Scala
 
   //#actual-test
   "UserRoutes" should {
+    "不適切な名前のときにエラーを返す (GET /users/${name})" in {
+      // note that there's no need for the host part in the uri:
+      val request = Get(uri = "/users/abc123")
+
+      request ~> routes ~> check {
+        rejection shouldEqual ValidationRejection("invalid name (アルファベットと空白のみ可): 'abc123'")
+      }
+    }
+    //#actual-test
+
     "return no users if no present (GET /users)" in {
       // note that there's no need for the host part in the uri:
       val request = HttpRequest(uri = "/users")

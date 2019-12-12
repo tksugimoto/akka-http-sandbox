@@ -7,7 +7,9 @@ import akka.actor.typed.scaladsl.Behaviors
 import scala.collection.immutable
 
 //#user-case-classes
-final case class UserName(value: String) extends AnyVal
+final case class UserName(value: String) extends AnyVal {
+  def isValid: Boolean = value.matches("[a-zA-Z ]+")
+}
 final case class User(name: UserName, age: Int, countryOfResidence: String)
 final case class Users(users: immutable.Seq[User])
 //#user-case-classes

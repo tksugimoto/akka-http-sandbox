@@ -55,23 +55,25 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
         //#users-get-delete
         //#users-get-post
         path(Segment.map(UserName.apply)) { name =>
-          concat(
-            get {
-              //#retrieve-user-info
-              rejectEmptyResponse {
-                onSuccess(getUser(name)) { response =>
-                  complete(response.maybeUser)
+          validate(name.isValid, s"invalid name (アルファベットと空白のみ可): '${name.value}'") {
+            concat(
+              get {
+                //#retrieve-user-info
+                rejectEmptyResponse {
+                  onSuccess(getUser(name)) { response =>
+                    complete(response.maybeUser)
+                  }
                 }
-              }
-              //#retrieve-user-info
-            },
-            delete {
-              //#users-delete-logic
-              onSuccess(deleteUser(name)) { performed =>
-                complete((StatusCodes.OK, performed))
-              }
-              //#users-delete-logic
-            })
+                //#retrieve-user-info
+              },
+              delete {
+                //#users-delete-logic
+                onSuccess(deleteUser(name)) { performed =>
+                  complete((StatusCodes.OK, performed))
+                }
+                //#users-delete-logic
+              })
+          }
         })
       //#users-get-delete
     }
