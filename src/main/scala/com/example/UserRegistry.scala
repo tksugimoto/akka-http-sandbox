@@ -4,16 +4,21 @@ package com.example
 import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+
 import scala.collection.immutable
+import scala.util.Try
 
 //#user-case-classes
-final case class UserName(value: String) extends AnyVal
+final case class UserName(value: String) {
+  require(value.matches("[a-zA-Z ]+"), s"invalid name (アルファベットと空白のみ可): '$value'")
+}
 object UserName {
   def validateAndApply(rawName: String): Either[String, UserName] = {
-    if (rawName.matches("[a-zA-Z ]+")) {
-      Right(UserName(rawName))
-    } else {
-      Left(s"invalid name (アルファベットと空白のみ可): '$rawName'")
+    Try(UserName(rawName)).toEither.left.map { throwable =>
+      Option(throwable.getMessage)
+          // require が付与するメッセージを除去 (FIXME)
+          .map(_.replaceFirst("requirement failed: ", ""))
+          .getOrElse("unexpected error")
     }
   }
 }
