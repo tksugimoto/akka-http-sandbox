@@ -2,13 +2,14 @@ package com.example
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.{ Directive1, Route }
+import akka.http.scaladsl.server.{ Directive1, Route, ValidationRejection }
 
 import scala.concurrent.Future
 import com.example.UserRegistry._
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.http.scaladsl.server.directives.RouteDirectives.reject
 import akka.util.Timeout
 
 //#import-json-formats
@@ -35,7 +36,10 @@ class UserRoutes(userRegistry: ActorRef[UserRegistry.Command])(implicit val syst
   private def userNamePath: Directive1[UserName] =
     for {
       rawName <- path(Segment)
-      name <- validate(UserName.isValid(rawName), s"invalid name (アルファベットと空白のみ可): '$rawName'").tmap(_ => UserName(rawName))
+      name <- UserName.validateAndApply(rawName) match {
+        case Right(name) => provide(name)
+        case Left(errorMsg) => reject(ValidationRejection(errorMsg)).toDirective[Tuple1[UserName]]
+      }
     } yield name
 
   //#all-routes
